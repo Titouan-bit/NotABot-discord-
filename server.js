@@ -22,7 +22,6 @@ const configSchema = new mongoose.Schema({
     guildId: { type: String, required: true, unique: true },
     s0urcechannelid: {type: String, required: false, unique: true}
 });
-let s0urceChannel = null;
 const GuildConfig = mongoose.model('GuildConfig', configSchema);
 
 const userSchema = new mongoose.Schema({
@@ -83,12 +82,15 @@ setInterval(() => {
     http.get(`http://localhost:${port}/ping`, (res) => {}).on('error', () => {});
     https.get('https://notabot-discord.onrender.com', (res) => {}).on('error', () => {});
 }, 5 * 60 * 1000);
-let Announces = null;
-const SendNewAnnounce = async function(s0urceChannel) {
+const announceSchema = new mongoose.Schema({
+    seller: String, item: String, price: String, description: String
+});
+const Announce = mongoose.model('Announce', announceSchema);
+const SendNewAnnounce = async function(s0urceChannel, a) {
     const CreatenewAnnounceEmbed = new EmbedBuilder()
         .setTitle('Nouvelle Annonce !')
         .setColor('#1E3A8A')
-        .setDescription(newAnnounce);
+        .setDescription(`${a.item} : ${a.price}\n${a.description}\nVendu par : ${a.seller}`)
 
     const row = new ActionRowBuilder();
 
@@ -104,8 +106,8 @@ const SendNewAnnounce = async function(s0urceChannel) {
     setTimeout(() => s0urceChannel.send({ embeds: [CreatenewAnnounceEmbed], components: [row] }), 200);
 };
 client.on('messageCreate', async function(message){
-    const isModo = message.member.roles.cache.some(r => ['Moderateur', 'Fondateur'].includes(r.name));
     if (message.author.bot || !message.guild || !message.member) return;
+    const isModo = message.member.roles.cache.some(r => ['Moderateur', 'Fondateur'].includes(r.name));
     const text = message.content;
     if (text.startsWith('/s0urceName')){
         const namewanted = text.slice('/s0urceName'.length).trim().toLowerCase();
@@ -119,38 +121,40 @@ client.on('messageCreate', async function(message){
     if (text === '/s0urceHere'){
         if (!isModo){
             await message.channel.send('❌ Tu n\'as pas les permissions d\'administrateur pour utiliser cette commande !');
+            return;
         }
         const config = await getConfig(message.guild.id);
         config.s0urcechannelid = message.channel.id;
-        s0urceChannel = message.channel;
         await config.save();
-        await s0urceChannel.send('OK, the s0urce infos will be here');
+        await message.channel.send('OK, the s0urce infos will be here');
     }
-    if (text.startsWith('/Announces')){
-        if (Announces != null) {
-            await s0urceChannel.send('Ok here the Announces !');
-            const annonces = await Announces.find().sort({ _id: -1 }).limit(10);
-            annonces.forEach((annonce, i) => {
-                setTimeout(() => {
-                    s0urceChannel.send(id, sender, `${i + 1}: selled by: ${annonce.seller} item: ${annonce.item} price: ${annonce.price}, description: ${annonce.description}`)
-                }, i * 100);
-            });
-        } else {
-            await s0urceChannel.send(' pas d annonces');
+    if (text.startsWith('/Announces')) {
+        const annonces = await Announce.find().sort({ _id: -1 }).limit(10);
+        if (annonces.length === 0) {
+            message.channel.send('pas d\'annonces');
+            return; 
         }
+        await message.channel.send('Ok here the Announces !');
+        annonces.forEach((a, i) => {
+            setTimeout(() => {
+                message.channel.send(`${i + 1}: selled by: ${a.seller}  item: ${a.item}  price: ${a.price}  ${a.description}`);
+            }, i * 500);
+        });
     }
 });
 app.post('/newAnnouce', async (req, res) => {
     res.sendStatus(200);
-    const pseudo = (req.body.names0urce)
-    const istheres0urcename = pseudo.findOne({s0urceName: pseudo})
-    const newAnnounce = (req.body.newAnnounce);
-    Announces = (req.body.Announce);
-    if (istheres0urcename){
-        if (s0urceChannel){
-            SendNewAnnounce();
-        } else {
-            return;
-        }
+    const { names0urce, seller, item, price, description } = req.body;
+    const known = await S0urceUser.findOne({ s0urceName: String(names0urce).toLowerCase() });
+    if (!known) {
+        console.log('pseudo non associé : ');
+        return;
     }
+    const config = await GuildConfig.findOne({ s0urcechannelid: { $ne: null } });
+    if (!config){
+        console.log('aucun salon défini avec /s0urceHere');
+        return;
+    }
+    const channel = await client.channels.fetch(config.s0urcechannelid);
+    await SendNewAnnounce(channel, { seller, item, price, description });
 });

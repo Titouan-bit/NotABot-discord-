@@ -64,6 +64,25 @@ client.on('shardDisconnect', (e, id) => console.error(`❌ Shard ${id} déconnec
 client.once('ready', () => {
     console.log(`🤖 Bot Discord connecté en tant que ${client.user.tag} !`);
 });
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`🚀 Serveur web Discord actif sur le port ${port}`);
+    fetch('https://discord.com/api/v10/gateway').then(r => console.log('[test] status', r.status)).catch(e => console.log('[test] erreur', e.message));
+
+    const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+    if (!DISCORD_TOKEN) {
+        console.error('❌ DISCORD_TOKEN manquant dans les variables d\'environnement.');
+        process.exit(1);
+    }
+    client.on('debug', (info) => console.log('[debug]', info));
+    client.on('shardError', (err) => console.error('❌ shardError:', err));
+    client.rest.on('rateLimited', (info) => console.log('[rateLimit]', info));
+    client.login(DISCORD_TOKEN).catch((err) => console.error('❌ Login échoué:', err));
+});
+setInterval(() => {
+    http.get(`http://localhost:${port}/ping`, (res) => {}).on('error', () => {});
+    https.get('https://notabot-discord.onrender.com', (res) => {}).on('error', () => {});
+}, 5 * 60 * 1000);
 let Announces = null;
 const SendNewAnnounce = async function(s0urceChannel) {
     const CreatenewAnnounceEmbed = new EmbedBuilder()

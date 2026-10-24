@@ -104,7 +104,7 @@ const SendNewAnnounce = async function(s0urceChannel) {
     setTimeout(() => s0urceChannel.send({ embeds: [CreatenewAnnounceEmbed], components: [row] }), 200);
 };
 client.on('messageCreate', async function(message){
-    const isModo = message.member.roles.cache.includes('Moderateur || Fondateur');
+    const isModo = message.member.roles.cache.some(r => ['Moderateur', 'Fondateur'].includes(r.name));
     if (message.author.bot || !message.guild || !message.member) return;
     const text = message.content;
     if (text.startsWith('/s0urceName')){
@@ -116,7 +116,7 @@ client.on('messageCreate', async function(message){
         );
         await message.reply('✅ Pseudo associé !');
     }
-    if (text.startsWith('/s0urceHere')){
+    if (text === '/s0urceHere'){
         if (!isModo){
             await message.channel.send('❌ Tu n\'as pas les permissions d\'administrateur pour utiliser cette commande !');
         }

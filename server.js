@@ -14,7 +14,6 @@ if (!uri) {
 }
 const http = require('http');
 const https = require('https');
-const { config } = require('process');
 mongoose.connect(uri)
     .then(() => console.log('✅ Connecté à MongoDB'))
     .catch((err) => console.error('❌ Erreur connexion MongoDB:', err));
@@ -23,6 +22,7 @@ const configSchema = new mongoose.Schema({
     guildId: { type: String, required: true, unique: true },
     s0urcechannelid: {type: String, required: false, unique: true}
 });
+let s0urceChannel = null;
 const GuildConfig = mongoose.model('GuildConfig', configSchema);
 
 const userSchema = new mongoose.Schema({
@@ -120,12 +120,11 @@ client.on('messageCreate', async function(message){
         if (!isModo){
             await message.channel.send('❌ Tu n\'as pas les permissions d\'administrateur pour utiliser cette commande !');
         }
+        const config = await getConfig(message.guild.id);
         config.s0urcechannelid = message.channel.id;
         s0urceChannel = message.channel;
         await config.save();
-        if (s0urcechannel){
-            await s0urcechannelid.send('OK, the s0urce infos will be here');
-        }
+        await s0urceChannel.send('OK, the s0urce infos will be here');
     }
     if (text.startsWith('/Announces')){
         if (Announces != null) {

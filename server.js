@@ -111,7 +111,7 @@ client.on('messageCreate', async function(message){
         const namewanted = text.slice('/s0urceName'.length).trim().toLowerCase();
         await S0urceUser.findOneAndUpdate(
             {s0urceName: namewanted},
-            {s0urceName: pseudo, discordId: message.author.id },
+            {s0urceName: namewanted, discordId: message.author.id },
             {upsert: true }
         );
         await message.reply('✅ Pseudo associé !');

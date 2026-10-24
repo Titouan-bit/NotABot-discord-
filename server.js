@@ -135,6 +135,8 @@ client.on('messageCreate', async function(message){
                     s0urceChannel.send(id, sender, `${i + 1}: selled by: ${annonce.seller} item: ${annonce.item} price: ${annonce.price}, description: ${annonce.description}`)
                 }, i * 100);
             });
+        } else {
+            await s0urceChannel.send(' pas d annonces');
         }
     }
 });

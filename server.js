@@ -36,7 +36,6 @@ const s0urceUserSchema = new mongoose.Schema({
 const S0urceUser = mongoose.model('S0urceUser', s0urceUserSchema);
 userSchema.index({ userId: 1, guildId: 1 }, { unique: true });
 const UserData = mongoose.model('UserData', userSchema);
-
 async function getConfig(guildId) {
     let config = await GuildConfig.findOne({ guildId });
     if (!config) {
@@ -95,7 +94,7 @@ const SendNewAnnounce = async function(s0urceChannel, a) {
     const row = new ActionRowBuilder();
 
     const BUYIT = new ButtonBuilder()
-        .setCustomId('BUY')
+        .setCustomId(`BUY | ${a.seller} | ${a.item}`)
         .setLabel('BUY')
         .setEmoji('🤑')
         .setStyle(ButtonStyle.Secondary);
@@ -128,7 +127,7 @@ client.on('messageCreate', async function(message){
         await config.save();
         await message.channel.send('OK, the s0urce infos will be here');
     }
-    if (text.startsWith('/Announces')) {
+    if (text === '/Announces') {
         const annonces = await Announce.find().sort({ _id: -1 }).limit(10);
         if (annonces.length === 0) {
             message.channel.send('pas d\'annonces');
@@ -140,6 +139,30 @@ client.on('messageCreate', async function(message){
                 message.channel.send(`${i + 1}: selled by: ${a.seller}  item: ${a.item}  price: ${a.price}  ${a.description}`);
             }, i * 500);
         });
+    }
+});
+client.on('interactionCreate', async function(interaction){
+    if (interaction.customId.startsWith('BUY')){
+        const seller = interaction.customId.replace(`BUY | ',${a.item}, ''`);
+        const known = await S0urceUser.findOne({ s0urceName: seller.toLowerCase() });
+        if (known){
+            interaction.reply('Cette personne n\'est pas sur discord je vais lui envoyer un s0urce mail');
+            const mecname = interaction.username;
+            const islinked = await S0urceUser.findOne({ discordId: interaction.user.id });
+            if (islinked.s0urceName === seller.toLowerCase()) {
+                return interaction.editReply('🤡 Tu ne peux pas acheter ta propre annonce !');
+            }
+            if (!islinked){
+                await s0urceChannel.send(`@${mecname}, tu n'as pas associé ton nom de s0urce, fait le avec /s0urceName (ton nom s0urce) et re-cliques sur buy`);
+            } else {
+                await fetch('https://notabot-qecj.onrender.com/sendMailFromDiscord', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender: islinked, to: known,})
+                });
+            }
+            
+        }
     }
 });
 app.post('/newAnnouce', async (req, res) => {
@@ -158,3 +181,12 @@ app.post('/newAnnouce', async (req, res) => {
     const channel = await client.channels.fetch(config.s0urcechannelid);
     await SendNewAnnounce(channel, { seller, item, price, description });
 });
+app.post('/newRecord'), async (req, res) => {
+    res.sendStatus(200);
+    const { namegame, record, port} = req.boy;
+    const known = await S0urceUser.findOne({ s0urceName: String(namegame).toLowerCase() });
+    if (known){
+        await s0urceChannel.send(`@NotifNewRecord, a New record was created on port: ${port} on ${record}sec by @${known} | ${sender} (discord name | in-game Pseudo)`)       
+    }
+    await s0urceChannel.send(`@NotifNewRecord, a New record was created on port: ${port} on ${record}sec by ${namegame} (only s0urce Pseudo, can't know his discord name)`)
+}

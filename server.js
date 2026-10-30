@@ -28,6 +28,8 @@ const userSchema = new mongoose.Schema({
     userId: { type: String, required: true },
     guildId: { type: String, required: true },
     username: { type: String, required: true },
+    xp: {type: Number, default: 0},
+    level: {type: Number, default: 0}
 });
 const s0urceUserSchema = new mongoose.Schema({
     s0urceName: { type: String, required: true, unique: true },
@@ -43,7 +45,7 @@ async function getConfig(guildId) {
     }
     return config;
 }
-
+let xpNeeded = 0;
 process.on('unhandledRejection', (err) => console.error('❌ Unhandled rejection:', err));
 process.on('uncaughtException', (err) => console.error('❌ Uncaught exception:', err));
 
@@ -104,7 +106,117 @@ const SendNewAnnounce = async function(s0urceChannel, a) {
     await s0urceChannel.send('@notifAnnounces, il y a une nouvelle annonce');
     setTimeout(() => s0urceChannel.send({ embeds: [CreatenewAnnounceEmbed], components: [row] }), 200);
 };
+function genererCode(longueur = 16) {
+    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let code = '';
+    for (let i = 0; i < longueur; i++) {
+        const randomIndex = Math.floor(Math.random() * caracteres.length);
+        code += caracteres[randomIndex];
+    }
+    return code;
+}
 client.on('messageCreate', async function(message){
+    let sender = await UserData.findOne({ userId: message.author.id, guildId: message.guild.id });
+    if (!sender) sender = new UserData({ userId: message.author.id, guildId: message.guild.id, username: message.author.username });
+    sender.xp += 15;
+    const senderlvl = sender.level;
+    if (senderlvl == 0){
+        xpNeeded = 100;
+    } else if (senderlvl = 1){
+        xpNeeded = 200;
+    } else if (senderlvl = 2){
+        xpNeeded = 350;
+    } else if (senderlvl = 3){
+        xpNeeded = 500;
+    } else if (senderlvl = 4){
+        xpNeeded = 750;
+    } else if (senderlvl = 5){
+        xpNeeded = 1000;
+    } else if (senderlvl = 6){
+        xpNeeded = 1300;
+    } else if (senderlvl = 7){
+        xpNeeded = 1800;
+    }
+    if (sender.xp >= xpNeeded) {
+            sender.level += 1;
+            sender.xp = 0;
+            if (sender.level == 1){
+                message.member.roles.add(message.guild.roles.cache.find(r => r.name === `Actif commun`));
+                await message.channel.send(`congrats: <@${message.author.id}> Est passé lvl ${sender.level}, a obtenu le role: Actif commun et gagne un commun de son choix`);
+                const monCode = genererCode(16);
+                try {
+                    await message.author.send(`GG pour avoir gagné le niveau 1 ton code ici: ${monCode}. Pour l'utiliser, vous devez juste ouvrir s0urce, envoyer en MP à NotABot "marketplace" et envoyer "code: <le code>".`);
+                } catch (error) {
+                    await message.channel.send(`<@${message.author.id}>, Vos mp sont fermés, veuillez les ouvrir et contacter <@Titouan> car je ne peux pas actuellement gerer ce beug`);
+                }
+                await fetch('https://notabot-qecj.onrender.com/sendcodefornewlevel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: monCode, description: 'common'})
+                });
+
+            }
+            if (sender.level == 2){
+                message.member.roles.add(message.guild.roles.cache.find(r => r.name === `Actif uncommun`));
+                await message.channel.send(`congrats: <@${message.author.id}> Est passé lvl ${sender.level}, a obtenu le role: Actif uncommun et gagne un uncommon de son choix`);
+                const monCode = genererCode(16);
+                await fetch('https://notabot-qecj.onrender.com/sendcodefornewlevel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: monCode, description: 'uncommon'})
+                });
+            }
+            if (sender.level == 3){
+                message.member.roles.add(message.guild.roles.cache.find(r => r.name === `Actif rare`));
+                await message.channel.send(`congrats: <@${message.author.id}> Est passé lvl ${sender.level}, a obtenu le role: Actif rare et gagne un rare de son choix`);
+                const monCode = genererCode(16);
+                await fetch('https://notabot-qecj.onrender.com/sendcodefornewlevel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: monCode, description: 'rare'})
+                });
+            }
+            if (sender.level == 4){
+                message.member.roles.add(message.guild.roles.cache.find(r => r.name === `Actif epic`));
+                await message.channel.send(`congrats: <@${message.author.id}> Est passé lvl ${sender.level}, a obtenu le role: Actif epic et gagne un epic de son choix`);
+                const monCode = genererCode(16);
+                await fetch('https://notabot-qecj.onrender.com/sendcodefornewlevel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: monCode, description: 'epic'})
+                });
+            }
+            if (sender.level == 5){
+                message.member.roles.add(message.guild.roles.cache.find(r => r.name === `Actif leg`));
+                await message.channel.send(`congrats: <@${message.author.id}> Est passé lvl ${sender.level}, a obtenu le role: Actif leg et gagne un leg de son choix`);
+                const monCode = genererCode(16);
+                await fetch('https://notabot-qecj.onrender.com/sendcodefornewlevel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: monCode, description: 'legendary'})
+                });
+            }
+            if (sender.level == 6){
+                message.member.roles.add(message.guild.roles.cache.find(r => r.name === `Actif mythic`));
+                await message.channel.send(`congrats: <@${message.author.id}> Est passé lvl ${sender.level}, a obtenu le role: Actif mythic et gagne un mythic de son choix`);
+                const monCode = genererCode(16);
+                await fetch('https://notabot-qecj.onrender.com/sendcodefornewlevel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: monCode, description: 'mythic'})
+                });
+            }
+            if (sender.level == 7){
+                message.member.roles.add(message.guild.roles.cache.find(r => r.name === `Actif ethereal`));
+                await message.channel.send(`congrats: <@${message.author.id}> Est passé lvl ${sender.level}, a obtenu le role: Actif ethereal et gagne un ethereal de son choix`);
+                const monCode = genererCode(16);
+                await fetch('https://notabot-qecj.onrender.com/sendcodefornewlevel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: monCode, description: 'ethereal'})
+                });
+            }
+        }
     if (message.author.bot || !message.guild || !message.member) return;
     const isModo = message.member.roles.cache.some(r => ['Moderateur', 'Fondateur'].includes(r.name));
     const text = message.content;

@@ -116,8 +116,8 @@ function genererCode(longueur = 16) {
     return code;
 }
 client.on('messageCreate', async function(message){
-    let sender = await UserData.findOne({ userId: message.author.id, guildId: message.guild.id });
-    if (!sender) sender = new UserData({ userId: message.author.id, guildId: message.guild.id, username: message.author.username });
+    let sender = await UserData.findOne({ userId: message.author.id, });
+    if (!sender) sender = new UserData({ userId: message.author.id, });
     console.log(`message recu de ${sender}, lvl ${sender.level} xp, ${sender.xp}`);
     sender.xp += 15;
     const senderlvl = sender.level;
